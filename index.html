@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+  <title>
+   Taskboard OOP JS
+  </title>
+  <style>
+   
+    :root {
+        --bg:#eef1f4;
+        --sf:#fff;
+        --ink:#1d2a3a;
+        --mut:#5f6f82;
+        --ln:#d5dce4;
+        --ac:#0f6e6e;
+        --acx:#fff;
+        --hi:#b3261e;
+        --md:#8a5d00;
+        --lo:#2f6b3a;
+        box-sizing:border-box;
+        padding-top:env(safe-area-inset-top,0px);
+        padding-bottom:env(safe-area-inset-bottom,0px);
+        color-scheme:light
+    }
+    @media (prefers-color-scheme:dark) {
+        :root:not([data-theme="light"]) {
+            --bg:#121a24;
+            --sf:#1a2431;
+            --ink:#e6ecf2;
+            --mut:#93a3b5;
+            --ln:#2d3b4c;
+            --ac:#4fc1bd;
+            --acx:#0b1a1a;
+            --hi:#ff8a80;
+            --md:#e9b44c;
+            --lo:#7fcf8b;
+            color-scheme:dark
+        }
+    }
+    :root[data-theme="dark"] {
+        --bg:#121a24;
+        --sf:#1a2431;
+        --ink:#e6ecf2;
+        --mut:#93a3b5;
+        --ln:#2d3b4c;
+        --ac:#4fc1bd;
+        --acx:#0b1a1a;
+        --hi:#ff8a80;
+        --md:#e9b44c;
+        --lo:#7fcf8b;
+        color-scheme:dark
+    }
+    html {
+        scroll-padding-top:env(safe-area-inset-top,0px)
+    }
+    * {
+        box-sizing:border-box
+    }
+    body {
+        margin:0;
+        background:var(--bg);
+        color:var(--ink);
+        font:15px/1.5 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif
+    }
+    h1,h2,h3 {
+        margin:0;
+        font-weight:600;
+        letter-spacing:-.01em
+    }
+    button,input,select,textarea {
+        font:inherit;
+        color:inherit
+    }
+    button {
+        cursor:pointer;
+        border:1px solid var(--ln);
+        background:var(--sf);
+        border-radius:6px;
+        padding:6px 12px
+    }
+    button.pri {
+        background:var(--ac);
+        color:var(--acx);
+        border-color:var(--ac)
+    }
+    button.danger {
+        color:var(--hi)
+    }
+    button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.task:focus-visible {
+        outline:2px solid var(--ac);
+        outline-offset:2px
+    }
+    input,select,textarea {
+        background:var(--sf);
+        border:1px solid var(--ln);
+        border-radius:6px;
+        padding:6px 8px;
+        width:100%
+    }
+    .app {
+        display:grid;
+        grid-template-columns:260px 1fr;
+        min-height:100vh
+    }
+    aside {
+        border-right:1px solid var(--ln);
+        padding:20px 16px;
+        background:var(--sf)
+    }
+    aside h1 {
+        font-size:18px;
+        margin-bottom:16px
+    }
+    .proj {
+        display:block;
+        width:100%;
+        text-align:left;
+        margin-bottom:6px;
+        border-radius:6px
+    }
+    .proj[aria-current="true"] {
+        border-color:var(--ac);
+        box-shadow:inset 3px 0 0 var(--ac)
+    }
+    .proj small {
+        display:block;
+        color:var(--mut)
+    }
+    main {
+        padding:20px 24px;
+        min-width:0
+    }
+    .tabs {
+        display:flex;
+        gap:8px;
+        margin-bottom:16px
+    }
+    .tabs button[aria-selected="true"] {
+        background:var(--ink);
+        color:var(--bg);
+        border-color:var(--ink)
+    }
+    .stats {
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
+        gap:1px;
+        background:var(--ln);
+        border:1px solid var(--ln);
+        border-radius:8px;
+        overflow:hidden;
+        margin:12px 0 16px
+    }
+    .stats div {
+        background:var(--sf);
+        padding:10px 12px
+    }
+    .stats b {
+        display:block;
+        font-size:22px;
+        font-variant-numeric:tabular-nums
+    }
+    .stats span {
+        color:var(--mut);
+        font-size:13px
+    }
+    .stats .od b {
+        color:var(--hi)
+    }
+    .filters {
+        display:grid;
+        grid-template-columns:2fr repeat(3,1fr) auto;
+        gap:8px;
+        margin-bottom:14px
+    }
+    .task {
+        display:grid;
+        grid-template-columns:4px 1fr auto;
+        gap:12px;
+        background:var(--sf);
+        border:1px solid var(--ln);
+        border-radius:8px;
+        padding:10px 12px;
+        margin-bottom:8px;
+        cursor:pointer;
+        align-items:center
+    }
+    .task .bar {
+        align-self:stretch;
+        border-radius:2px;
+        background:var(--md)
+    }
+    .task[data-p="high"] .bar {
+        background:var(--hi)
+    }
+    .task[data-p="low"] .bar {
+        background:var(--lo)
+    }
+    .task.done .t {
+        text-decoration:line-through;
+        color:var(--mut)
+    }
+    .meta {
+        color:var(--mut);
+        font-size:13px;
+        display:flex;
+        flex-wrap:wrap;
+        gap:4px 12px
+    }
+    .pill {
+        border:1px solid var(--ln);
+        border-radius:99px;
+        padding:0 8px;
+        font-size:12px
+    }
+    .late {
+        color:var(--hi);
+        font-weight:600
+    }
+    .av {
+        display:inline-grid;
+        place-items:center;
+        width:26px;
+        height:26px;
+        border-radius:50%;
+        background:var(--ac);
+        color:var(--acx);
+        font-size:11px;
+        font-weight:600;
+        margin-left:-6px;
+        border:2px solid var(--sf)
+    }
+    dialog {
+        border:1px solid var(--ln);
+        border-radius:10px;
+        background:var(--sf);
+        color:var(--ink);
+        width:min(560px,94vw);
+        max-height:90vh;
+        padding:20px
+    }
+    dialog::backdrop {
+        background:rgba(10,20,30,.5)
+    }
+    .row {
+        display:flex;
+        gap:8px;
+        flex-wrap:wrap;
+        align-items:center;
+        margin:8px 0
+    }
+    .grid2 {
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px
+    }
+    label {
+        display:block;
+        font-size:13px;
+        color:var(--mut)
+    }
+    .chip {
+        display:inline-flex;
+        gap:6px;
+        align-items:center;
+        border:1px solid var(--ln);
+        border-radius:99px;
+        padding:2px 4px 2px 10px
+    }
+    .chip button {
+        border:0;
+        padding:0 6px;
+        background:none
+    }
+    ul.plain {
+        list-style:none;
+        padding:0;
+        margin:6px 0
+    }
+    ul.plain li {
+        padding:4px 0;
+        border-bottom:1px solid var(--ln);
+        font-size:14px
+    }
+    .feed {
+        font-size:13px;
+        color:var(--mut);
+        max-height:120px;
+        overflow:auto;
+        margin-top:14px
+    }
+    .doc {
+        max-width:760px
+    }
+    .doc h2 {
+        margin:22px 0 6px;
+        font-size:18px
+    }
+    .doc p,.doc li {
+        max-width:70ch
+    }
+    code {
+        background:var(--bg);
+        padding:1px 5px;
+        border-radius:4px;
+        font-size:13px
+    }
+    pre {
+        background:var(--bg);
+        padding:12px;
+        border-radius:8px;
+        overflow-x:auto;
+        font-size:13px
+    }
+    .empty {
+        padding:28px;
+        text-align:center;
+        color:var(--mut);
+        border:1px dashed var(--ln);
+        border-radius:8px
+    }
+    @media (max-width:760px) {
+        .app {
+            grid-template-columns:1fr
+        }
+        aside {
+            border-right:0;
+            border-bottom:1px solid var(--ln)
+        }
+        .filters {
+            grid-template-columns:1fr 1fr
+        }
+        .filters input {
+            grid-column:1/-1
+        }
+        main {
+            padding:16px
+        }
+    }
+  
+  </style>
+ </head>
+ <body>
+  <div class="app">
+   <aside>
+    <h1>
+     Taskboard
+    </h1>
+    <div id="projects">
+    </div>
+    <div aria-live="polite" class="feed" id="feed">
+    </div>
+   </aside>
+   <main>
+    <div class="tabs" role="tablist">
+     <button aria-selected="true" data-tab="board" role="tab">
+      Board
+     </button>
+     <button aria-selected="false" data-tab="arch" role="tab">
+      Architecture
+     </button>
+    </div>
+    <section id="board">
+    </section>
+    <section class="doc" hidden="" id="arch">
+    </section>
+   </main>
+  </div>
+  <dialog id="dlg">
+  </dialog>
+  <script>
+   
+    "use strict";
+    /* ================= MODELS ================= */
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const todayStr = () => new Date().toISOString().slice(0, 10);
+    const offset = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+    // Composition parts: small reusable objects
+    class User {
+        constructor(id, name, role) { this.id = id; this.name = name; this.role = role; }
+        get initials() { return this.name.split(' ').map(w => w[0]).join('').slice(0, 2); }
+    }
+    class Comment {
+        constructor(author, text) { this.author = author; this.text = text; this.at = new Date(); Object.freeze(this); }
+    }
+    class Attachment {
+        constructor(name, sizeKb) { this.name = name; this.sizeKb = sizeKb; Object.freeze(this); }
+    }
+    class ActivityLog {
+        #entries = [];
+        add(msg) { this.#entries.unshift({ msg, at: new Date() }); }
+        get entries() { return this.#entries.map(e => ({ ...e })); }
+    } // copies protect internal data
+    // Observer: tiny event emitter, composed into Project (not inherited)
+    class Observable {
+        #fns = new Set();
+        subscribe(fn) { this.#fns.add(fn); return () => this.#fns.delete(fn); }
+        notify(evt) { this.#fns.forEach(fn => fn(evt)); }
+    }
+    // Base Task
+    class Task {
+        static PRIORITIES = Object.freeze(['low', 'medium', 'high']);
+        static STATUSES = Object.freeze(['todo', 'in-progress', 'done']);
+        static label = 'General';
+        static #seq = 100;
+        static nextId(prefix = 'T') { return `${prefix}${++Task.#seq}`; } // static utility
+        static summarize(tasks) {
+            const hours = tasks.map(t => t.estimatedHours);
+            return { total: tasks.length,
+                completed: tasks.filter(t => t.status === 'done').length,
+                pending: tasks.filter(t => t.status !== 'done').length,
+                overdue: tasks.filter(t => t.isOverdue).length,
+                hours: hours.reduce((a, b) => a + b, 0),
+                largest: hours.length ? Math.max.apply(null, hours) : 0 }; // apply(): spread array as arguments
+        }
+        #id;
+        #title;
+        #priority;
+        #status = 'todo';
+        #hours = 0;
+        #assignees = [];
+        #comments = [];
+        #attachments = [];
+        #log = new ActivityLog(); // private internals
+        description;
+        dueDate;
+        constructor({ title, description = '', priority = 'medium', dueDate = null, estimatedHours = 0, assignees = [] }) {
+            this.#id = Task.nextId();
+            this.title = title;
+            this.priority = priority;
+            this.estimatedHours = estimatedHours;
+            this.description = description;
+            this.dueDate = dueDate;
+            assignees.forEach(u => this.assign(u));
+            this.#log.add('Task created');
+        }
+        get id() { return this.#id; }
+        get title() { return this.#title; }
+        set title(v) { if (!String(v).trim())
+            throw new Error('Title is required'); this.#title = String(v).trim(); }
+        get priority() { return this.#priority; }
+        set priority(v) { if (!Task.PRIORITIES.includes(v))
+            throw new Error('Invalid priority'); this.#priority = v; }
+        get status() { return this.#status; }
+        set status(v) { if (!Task.STATUSES.includes(v))
+            throw new Error('Invalid status'); this.#status = v; }
+        get estimatedHours() { return this.#hours; }
+        set estimatedHours(v) { v = Number(v); if (!(v >= 0))
+            throw new Error('Hours must be 0 or more'); this.#hours = v; }
+        get assignees() { return [...this.#assignees]; }
+        get comments() { return [...this.#comments]; }
+        get attachments() { return [...this.#attachments]; }
+        get log() { return this.#log.entries; }
+        get type() { return this.constructor.label; }
+        get isOverdue() { return !!this.dueDate && this.#status !== 'done' && this.dueDate < todayStr(); }
+        effectiveHours() { return this.#hours; } // overridden by subclasses
+        assign(user) { if (this.#assignees.some(u => u.id === user.id))
+            return false; this.#assignees.push(user); this.#log.add(`Assigned ${user.name}`); return true; }
+        unassign(user) { const n = this.#assignees.length; this.#assignees = this.#assignees.filter(u => u.id !== user.id); if (n !== this.#assignees.length)
+            this.#log.add(`Unassigned ${user.name}`); }
+        complete() { if (this.#status === 'done')
+            return; this.#status = 'done'; this.#log.add('Marked complete'); }
+        reopen() { if (this.#status !== 'done')
+            throw new Error('Only completed tasks can be reopened'); this.#status = 'todo'; this.#log.add('Reopened'); }
+        addComment(author, text) { if (!text.trim())
+            return; this.#comments.push(new Comment(author, text.trim())); this.#log.add(`Comment by ${author.name}`); }
+        addAttachment(name, kb) { this.#attachments.push(new Attachment(name, kb)); this.#log.add(`Attached ${name}`); }
+        snapshot() {
+            return { type: this.constructor.name, title: this.#title, description: this.description, priority: this.#priority,
+                dueDate: this.dueDate, estimatedHours: this.#hours, assigneeIds: this.#assignees.map(u => u.id) };
+        } // plain data only
+    }
+    // Subclasses: inheritance only where behavior genuinely differs
+    class DevelopmentTask extends Task {
+        static label = 'Development';
+        effectiveHours() { return Math.round(super.effectiveHours() * 1.25 * 10) / 10; }
+    } // +25% for code review & rework
+    class TestingTask extends Task {
+        static label = 'Testing';
+        effectiveHours() { return super.effectiveHours() + 1; }
+    } // +1h environment setup
+    class DocumentationTask extends Task {
+        static label = 'Documentation';
+    }
+    // Factory
+    class TaskFactory {
+        static #types = { DevelopmentTask, TestingTask, DocumentationTask, Task };
+        static create(type, data) { const C = TaskFactory.#types[type] || Task; return new C(data); }
+        static clone(task, users) {
+            const copy = structuredClone(task.snapshot()); // deep copy of plain data
+            const t = TaskFactory.create(copy.type, { ...copy, title: copy.title + ' (copy)', assignees: users.filter(u => copy.assigneeIds.includes(u.id)) });
+            return t;
+        }
+    }
+    class Project {
+        #id;
+        #tasks = new Map();
+        #config = { maxTasks: 30 };
+        #events = new Observable(); // composition: Observable
+        constructor({ id, title, description, startDate, dueDate, status = 'active', members = [] }) {
+            Object.assign(this, { title, description, startDate, dueDate, status });
+            this.#id = id;
+            this.members = members;
+        }
+        get id() { return this.#id; }
+        get tasks() { return [...this.#tasks.values()]; }
+        subscribe(fn) { return this.#events.subscribe(fn); }
+        #emit(type, task) { this.#events.notify({ type, task, project: this.title }); }
+        addTask(task) {
+            if (this.#tasks.size >= this.#config.maxTasks)
+                throw new Error('Project task limit reached');
+            task.assignees.forEach(u => { if (!this.members.includes(u))
+                throw new Error(`${u.name} is not a project member`); });
+            this.#tasks.set(task.id, task);
+            this.#emit('added', task);
+            return task;
+        }
+        getTask(id) { return this.#tasks.get(id); }
+        updateTask(id, changes) { const t = this.getTask(id); Object.entries(changes).forEach(([k, v]) => { t[k] = v; }); this.#emit('updated', t); }
+        deleteTask(id) { const t = this.#tasks.get(id); this.#tasks.delete(id); this.#emit('deleted', t); }
+        assignTask(id, user) {
+            if (!this.members.includes(user))
+                throw new Error('Only project members can be assigned');
+            if (this.getTask(id).assign(user))
+                this.#emit('assigned', this.getTask(id));
+        }
+        unassignTask(id, user) { this.getTask(id).unassign(user); this.#emit('unassigned', this.getTask(id)); }
+        completeTask(id) { const t = this.getTask(id); t.complete(); this.#emit('completed', t); }
+        reopenTask(id) { const t = this.getTask(id); t.reopen(); this.#emit('reopened', t); }
+        summary() { return Task.summarize(this.tasks); }
+    }
+    /* ================= SERVICE (no DOM) ================= */
+    class AppService {
+        users = [new User('u1', 'Amina Raza', 'Lead'), new User('u2', 'Bilal Khan', 'Developer'), new User('u3', 'Sara Malik', 'QA'), new User('u4', 'Omar Sheikh', 'Writer')];
+        projects = [];
+        selectedId = 'p1';
+        filters = { q: '', status: '', priority: '', assignee: '' };
+        constructor() { this.#seed(); }
+        #seed() {
+            const [a, b, c, d] = this.users;
+            const p1 = new Project({ id: 'p1', title: 'Website Redesign', description: 'New marketing site', startDate: offset(-20), dueDate: offset(30), members: [a, b, c, d] });
+            const p2 = new Project({ id: 'p2', title: 'Mobile App v2', description: 'Offline mode and sync', startDate: offset(-5), dueDate: offset(60), members: [a, b, c] });
+            this.projects.push(p1, p2);
+            const mk = (p, type, data, done) => { const t = TaskFactory.create(type, data); p.addTask(t); if (done)
+                p.completeTask(t.id); return t; };
+            mk(p1, 'DevelopmentTask', { title: 'Build responsive header', priority: 'high', dueDate: offset(-2), estimatedHours: 6, assignees: [b] });
+            mk(p1, 'TestingTask', { title: 'Cross-browser pass', priority: 'medium', dueDate: offset(5), estimatedHours: 4, assignees: [c] });
+            mk(p1, 'DocumentationTask', { title: 'Write content guidelines', priority: 'low', dueDate: offset(10), estimatedHours: 3, assignees: [d, a] });
+            mk(p1, 'DevelopmentTask', { title: 'Set up CI pipeline', priority: 'medium', dueDate: offset(-10), estimatedHours: 5, assignees: [b] }, true);
+            mk(p2, 'DevelopmentTask', { title: 'Local cache layer', priority: 'high', dueDate: offset(7), estimatedHours: 12, assignees: [b] }).addComment(a, 'Use IndexedDB.');
+            mk(p2, 'TestingTask', { title: 'Sync conflict tests', priority: 'high', dueDate: offset(14), estimatedHours: 8, assignees: [c] });
+            this.projects.forEach(p => p.subscribe(this.#onEvent));
+        }
+        listeners = [];
+        onChange(fn) { this.listeners.push(fn); }
+        #onEvent = e => { this.listeners.forEach(fn => fn(e)); };
+        get project() { return this.projects.find(p => p.id === this.selectedId); }
+        user(id) { return this.users.find(u => u.id === id); }
+        visibleTasks() {
+            const { q, status, priority, assignee } = this.filters;
+            const pool = this.selectedId === 'all' ? this.projects.flatMap(p => p.tasks) : this.project.tasks;
+            return pool.filter(t => (!q || (t.title + t.description).toLowerCase().includes(q.toLowerCase()))
+                && (!status || t.status === status) && (!priority || t.priority === priority)
+                && (!assignee || t.assignees.some(u => u.id === assignee)))
+                .sort((x, y) => (x.dueDate || '9').localeCompare(y.dueDate || '9'));
+        }
+        projectOf(task) { return this.projects.find(p => p.getTask(task.id)); }
+        setStatus(task, s) {
+            const p = this.projectOf(task);
+            if (s === 'done')
+                p.completeTask(task.id);
+            else {
+                if (task.status === 'done')
+                    p.reopenTask(task.id);
+                p.updateTask(task.id, { status: s });
+            }
+        }
+        duplicate(task) { const p = this.projectOf(task); return p.addTask(TaskFactory.clone(task, this.users)); }
+    }
+    /* ================= UI (DOM only) ================= */
+    const app = new AppService();
+    const $ = s => document.querySelector(s);
+    const activityFeed = { items: [], push(e) {
+            this.items.unshift(`${e.type}: ${e.task.title}`);
+            this.items.length = Math.min(this.items.length, 8);
+            $('#feed').innerHTML = this.items.map(esc).join('<br>');
+        } };
+    // bind(): subscribing detaches push from activityFeed, so without bind `this` would be undefined
+    app.onChange(activityFeed.push.bind(activityFeed));
+    app.onChange(() => { render(); if ($('#dlg').open)
+        renderDetail(openId); });
+    let openId = null;
+    const avatars = t => t.assignees.map(u => `<span class="av" title="${esc(u.name)}">${esc(u.initials)}</span>`).join('') || '<span class="meta">Unassigned</span>';
+    const opts = (arr, sel) => arr.map(([v, l]) => `<option value="${esc(v)}"${v === sel ? ' selected' : ''}>${esc(l)}</option>`).join('');
+    function render() {
+        const p = app.project, all = app.selectedId === 'all';
+        $('#projects').innerHTML = [...app.projects.map(x => ({ id: x.id, title: x.title, n: x.tasks.length })), { id: 'all', title: 'All projects', n: app.projects.reduce((s, x) => s + x.tasks.length, 0) }]
+            .map(x => `<button class="proj" data-act="project" data-id="${x.id}" aria-current="${x.id === app.selectedId}">${esc(x.title)}<small>${x.n} tasks</small></button>`).join('');
+        const s = all ? Task.summarize(app.projects.flatMap(x => x.tasks)) : p.summary(), f = app.filters;
+        const tasks = app.visibleTasks();
+        $('#board').innerHTML = `
+      <div class="row" style="justify-content:space-between"><div><h2>${all ? 'All projects' : esc(p.title)}</h2><div class="meta">${all ? '' : esc(p.description) + ' · due ' + esc(p.dueDate) + ' · ' + p.members.length + ' members'}</div></div>
+      ${all ? '' : '<button class="pri" data-act="new">New task</button>'}</div>
+      <div class="stats"><div><b>${s.total}</b><span>Total tasks</span></div><div><b>${s.completed}</b><span>Completed</span></div><div><b>${s.pending}</b><span>Pending</span></div><div class="od"><b>${s.overdue}</b><span>Overdue</span></div><div><b>${s.hours}h</b><span>Estimated</span></div></div>
+      <div class="filters"><input id="fq" type="search" placeholder="Search tasks" aria-label="Search tasks" value="${esc(f.q)}">
+      <select id="fs" aria-label="Status">${opts([['', 'Any status'], ...Task.STATUSES.map(v => [v, v])], f.status)}</select>
+      <select id="fp" aria-label="Priority">${opts([['', 'Any priority'], ...Task.PRIORITIES.map(v => [v, v])], f.priority)}</select>
+      <select id="fa" aria-label="Assignee">${opts([['', 'Anyone'], ...app.users.map(u => [u.id, u.name])], f.assignee)}</select>
+      <button data-act="clear">Clear</button></div>
+      ${tasks.length ? tasks.map(t => `<div class="task ${t.status === 'done' ? 'done' : ''}" data-p="${t.priority}" tabindex="0" role="button" data-act="open" data-id="${t.id}">
+        <span class="bar"></span><div><div class="t"><b>${esc(t.title)}</b></div>
+        <div class="meta"><span class="pill">${esc(t.type)}</span><span class="pill">${t.priority}</span><span class="pill">${t.status}</span>
+        <span class="${t.isOverdue ? 'late' : ''}">${t.dueDate ? (t.isOverdue ? 'Overdue · ' : 'Due ') + esc(t.dueDate) : 'No due date'}</span><span>${t.estimatedHours}h</span></div></div>
+        <div style="padding-left:6px">${avatars(t)}</div></div>`).join('') : '<div class="empty">No tasks match these filters. Clear them or create a new task.</div>'}`;
+        const fq = $('#fq');
+        fq.oninput = e => { app.filters.q = e.target.value; const pos = e.target.selectionStart; render(); const n = $('#fq'); n.focus(); n.setSelectionRange(pos, pos); };
+        $('#fs').onchange = e => { app.filters.status = e.target.value; render(); };
+        $('#fp').onchange = e => { app.filters.priority = e.target.value; render(); };
+        $('#fa').onchange = e => { app.filters.assignee = e.target.value; render(); };
+    }
+    function renderDetail(id) {
+        const t = app.projects.flatMap(p => p.tasks).find(x => x.id === id);
+        const dlg = $('#dlg');
+        if (!t) {
+            dlg.close();
+            return;
+        }
+        const p = app.projectOf(t);
+        dlg.innerHTML = `<div class="row" style="justify-content:space-between"><h2>${esc(t.title)}</h2><button data-act="close" aria-label="Close">Close</button></div>
+      <div class="meta"><span class="pill">${esc(t.type)}</span><span>${esc(p.title)}</span><span>Estimate ${t.estimatedHours}h (planned effort ${t.effectiveHours()}h)</span></div>
+      <p>${esc(t.description) || '<span class="meta">No description.</span>'}</p>
+      <div class="grid2"><label>Status<select data-act="status">${opts(Task.STATUSES.map(v => [v, v]), t.status)}</select></label>
+      <label>Priority<select data-act="priority">${opts(Task.PRIORITIES.map(v => [v, v]), t.priority)}</select></label></div>
+      <h3 style="margin-top:14px">Assignees</h3><div class="row">${t.assignees.map(u => `<span class="chip">${esc(u.name)}<button data-act="unassign" data-u="${u.id}" aria-label="Remove ${esc(u.name)}">×</button></span>`).join('') || '<span class="meta">Nobody yet</span>'}
+      <select data-act="assign" aria-label="Add assignee"><option value="">Add assignee…</option>${opts(p.members.filter(m => !t.assignees.includes(m)).map(m => [m.id, m.name]), '')}</select></div>
+      <h3>Comments</h3><ul class="plain">${t.comments.map(c => `<li><b>${esc(c.author.name)}</b> ${esc(c.text)}</li>`).join('') || '<li class="meta">None yet</li>'}</ul>
+      <div class="row"><input id="cm" placeholder="Write a comment" aria-label="Comment"><button data-act="comment">Post comment</button></div>
+      <h3>Attachments</h3><ul class="plain">${t.attachments.map(a => `<li>${esc(a.name)} (${a.sizeKb} KB)</li>`).join('') || '<li class="meta">None</li>'}</ul>
+      <button data-act="attach">Attach sample file</button>
+      <h3 style="margin-top:14px">Activity</h3><div class="feed">${t.log.map(e => `${e.at.toLocaleTimeString()} ${esc(e.msg)}`).join('<br>')}</div>
+      <div class="row" style="margin-top:14px">${t.status === 'done' ? '<button data-act="reopen">Reopen</button>' : '<button class="pri" data-act="complete">Mark complete</button>'}
+      <button data-act="dup">Duplicate</button><button class="danger" data-act="delete">Delete</button></div>`;
+    }
+    function renderForm() {
+        const p = app.project;
+        $('#dlg').innerHTML = `<form id="nf"><h2>New task</h2>
+      <label>Type<select name="type">${opts([['DevelopmentTask', 'Development'], ['TestingTask', 'Testing'], ['DocumentationTask', 'Documentation'], ['Task', 'General']], '')}</select></label>
+      <label>Title<input name="title" required></label><label>Description<textarea name="description" rows="2"></textarea></label>
+      <div class="grid2"><label>Priority<select name="priority">${opts(Task.PRIORITIES.map(v => [v, v]), 'medium')}</select></label>
+      <label>Due date<input type="date" name="dueDate"></label>
+      <label>Estimated hours<input type="number" name="estimatedHours" min="0" step="0.5" value="2"></label></div>
+      <fieldset style="border:1px solid var(--ln);border-radius:6px;margin-top:10px"><legend class="meta">Assign to</legend>
+      ${p.members.map(m => `<label style="display:inline-block;margin-right:12px"><input type="checkbox" name="as" value="${m.id}" style="width:auto"> ${esc(m.name)}</label>`).join('')}</fieldset>
+      <div class="row" style="margin-top:14px"><button class="pri" type="submit">Create task</button><button type="button" data-act="close">Cancel</button></div>
+      <div class="late" id="err" role="alert"></div></form>`;
+        $('#nf').onsubmit = e => {
+            e.preventDefault();
+            const f = new FormData(e.target);
+            try {
+                const t = TaskFactory.create(f.get('type'), { title: f.get('title'), description: f.get('description'), priority: f.get('priority'),
+                    dueDate: f.get('dueDate') || null, estimatedHours: f.get('estimatedHours'), assignees: f.getAll('as').map(id => app.user(id)) });
+                p.addTask(t);
+                $('#dlg').close();
+            }
+            catch (err) {
+                $('#err').textContent = err.message;
+            }
+        };
+    }
+    /* ================= EVENTS ================= */
+    const guard = fn => { try {
+        fn();
+    }
+    catch (e) {
+        alert(e.message);
+    } };
+    document.addEventListener('click', e => {
+        const el = e.target.closest('[data-act]');
+        if (!el)
+            return;
+        const a = el.dataset.act;
+        const t = openId && app.projects.flatMap(p => p.tasks).find(x => x.id === openId), p = t && app.projectOf(t);
+        if (a === 'project') {
+            app.selectedId = el.dataset.id;
+            render();
+        }
+        else if (a === 'clear') {
+            app.filters = { q: '', status: '', priority: '', assignee: '' };
+            render();
+        }
+        else if (a === 'new') {
+            renderForm();
+            $('#dlg').showModal();
+        }
+        else if (a === 'open') {
+            openId = el.dataset.id;
+            renderDetail(openId);
+            $('#dlg').showModal();
+        }
+        else if (a === 'close')
+            $('#dlg').close();
+        else if (a === 'complete')
+            guard(() => p.completeTask(t.id));
+        else if (a === 'reopen')
+            guard(() => p.reopenTask(t.id));
+        else if (a === 'delete') {
+            if (confirm('Delete this task?')) {
+                p.deleteTask(t.id);
+                $('#dlg').close();
+            }
+        }
+        else if (a === 'dup')
+            guard(() => { const c = app.duplicate(t); openId = c.id; renderDetail(openId); });
+        else if (a === 'unassign')
+            guard(() => p.unassignTask(t.id, app.user(el.dataset.u)));
+        else if (a === 'comment') {
+            const i = $('#cm');
+            if (i.value.trim()) {
+                t.addComment(p.members[0], i.value);
+                p.updateTask(t.id, {});
+            }
+        }
+        else if (a === 'attach') {
+            t.addAttachment(`spec-${t.attachments.length + 1}.pdf`, 120);
+            p.updateTask(t.id, {});
+        }
+    });
+    document.addEventListener('change', e => {
+        const a = e.target.dataset.act;
+        if (!openId || !a)
+            return;
+        const t = app.projects.flatMap(p => p.tasks).find(x => x.id === openId), p = app.projectOf(t);
+        if (a === 'status')
+            guard(() => app.setStatus(t, e.target.value));
+        if (a === 'priority')
+            guard(() => p.updateTask(t.id, { priority: e.target.value }));
+        if (a === 'assign' && e.target.value)
+            guard(() => p.assignTask(t.id, app.user(e.target.value)));
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('.task'))
+        e.target.click(); });
+    document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => {
+        document.querySelectorAll('[data-tab]').forEach(x => x.setAttribute('aria-selected', x === b));
+        $('#board').hidden = b.dataset.tab !== 'board';
+        $('#arch').hidden = b.dataset.tab !== 'arch';
+    });
+    $('#arch').innerHTML = `<h2>Class structure</h2>
+    <p><b>Models:</b> <code>User</code>, <code>Comment</code>, <code>Attachment</code>, <code>ActivityLog</code> are small reusable parts. <code>Task</code> and <code>Project</code> hold them. <code>AppService</code> coordinates projects, users and filters and never touches the DOM. Rendering functions only read data and call service or model methods.</p>
+    <h2>Inheritance</h2>
+    <p><code>DevelopmentTask</code> and <code>TestingTask</code> extend <code>Task</code> and override <code>effectiveHours()</code> (using <code>super</code>), because their planning rules differ. <code>DocumentationTask</code> inherits unchanged. The hierarchy is one level deep on purpose.</p>
+    <h2>Encapsulation</h2>
+    <p>Private <code>#id</code>, <code>#status</code>, <code>#assignees</code>, <code>#comments</code>, <code>#log</code> in <code>Task</code>, and <code>#tasks</code>, <code>#config</code> in <code>Project</code>. Setters validate (empty title, bad priority, negative hours). Getters return copies so callers cannot mutate internals. Business rules live in the models: only completed tasks can be reopened, and only project members can be assigned.</p>
+    <h2>Static members</h2>
+    <p><code>Task.nextId()</code> generates IDs from a private static counter. <code>Task.summarize()</code> computes totals, overdue count and hours. <code>Task.PRIORITIES</code> and <code>STATUSES</code> are shared constants.</p>
+    <h2>Composition</h2>
+    <p>A task <em>has</em> assignees (<code>User</code>), comments, attachments and an <code>ActivityLog</code>. A project <em>has</em> an <code>Observable</code> instead of extending an event class, so no deep hierarchy is needed.</p>
+    <h2>Design patterns</h2>
+    <ul><li><b>Factory:</b> <code>TaskFactory.create(type, data)</code> picks the subclass from a type name.</li>
+    <li><b>Observer:</b> <code>Project</code> notifies subscribers on every change. <code>AppService</code> subscribes and the UI re-renders, so models never know about the UI.</li></ul>
+    <h2>call / apply / bind</h2>
+    <p><code>bind</code>: <code>activityFeed.push.bind(activityFeed)</code>. The observer calls the function as a plain callback, so without <code>bind</code> <code>this</code> would not be <code>activityFeed</code> and <code>this.items</code> would fail. <code>apply</code>: <code>Math.max.apply(null, hours)</code> passes an array as separate arguments in <code>Task.summarize</code>.</p>
+    <h2>References and cloning</h2>
+    <p><code>TaskFactory.clone()</code> takes a plain <code>snapshot()</code>, deep-copies it with <code>structuredClone()</code>, and builds a new task with a new ID, status reset to todo, and its own comments and log. Editing the copy never changes the original. <code>User</code> objects are shared on purpose: the same person is the same object.</p>
+    <h2>Separation of concerns</h2>
+    <p>Models and services (top of the script) have no <code>document</code> calls. The UI section renders from data and routes clicks to model methods through one delegated listener.</p>`;
+    render();
+  
+  </script>
+ </body>
+</html>
